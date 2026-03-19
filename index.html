@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Kalkulator Stok</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #F5F1EB;
+    --surface: #FFFFFF;
+    --surface2: #EDE8E0;
+    --border: #D8D0C4;
+    --text-primary: #1C1917;
+    --text-secondary: #78716C;
+    --text-muted: #A8A29E;
+    --accent: #2D6A6A;
+    --accent-light: #E8F4F4;
+    --accent-hover: #235555;
+    --mode-b: #5C3D8F;
+    --mode-b-light: #F0EAFB;
+    --plus: #166534;    --plus-bg: #DCFCE7;
+    --minus: #991B1B;   --minus-bg: #FEE2E2;
+    --match: #1E40AF;   --match-bg: #DBEAFE;
+    --radius: 14px;     --radius-sm: 8px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 0 0 70px;
+    color: var(--text-primary);
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--accent);
+    padding: 28px 20px 20px;
+    position: relative; overflow: hidden;
+    transition: background 0.4s ease;
+  }
+  .header.mode-b { background: var(--mode-b); }
+  .header::before {
+    content:''; position:absolute; top:-30px; right:-30px;
+    width:140px; height:140px; border-radius:50%; background:rgba(255,255,255,0.06);
+  }
+  .header::after {
+    content:''; position:absolute; bottom:-50px; left:30px;
+    width:100px; height:100px; border-radius:50%; background:rgba(255,255,255,0.04);
+  }
+  .header-label { font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:4px; }
+  .header-title { font-size:24px; font-weight:700; color:#fff; letter-spacing:-.02em; }
+  .header-sub   { font-size:13px; color:rgba(255,255,255,.6); margin-top:4px; }
+
+  /* MODE TOGGLE */
+  .mode-toggle-wrap { padding: 14px 16px 0; max-width: 480px; margin: 0 auto; }
+  .mode-toggle {
+    display: flex; background: var(--surface2);
+    border-radius: 10px; padding: 4px; gap: 4px;
+    border: 1.5px solid var(--border);
+  }
+  .mode-btn {
+    flex:1; padding:10px 8px; border:none; border-radius:7px;
+    font-family:'Sora',sans-serif; font-size:12px; font-weight:600;
+    cursor:pointer; background:transparent; color:var(--text-muted);
+    transition:all .25s ease; line-height:1.3; text-align:center;
+  }
+  .mode-btn.active { background:var(--surface); color:var(--text-primary); box-shadow:0 1px 6px rgba(0,0,0,.1); }
+  .mode-btn.active.a { color:var(--accent); }
+  .mode-btn.active.b { color:var(--mode-b); }
+  .mode-btn span { display:block; font-size:10px; font-weight:400; opacity:.7; margin-top:1px; }
+
+  /* HINT */
+  .mode-hint { max-width:480px; margin:10px auto 0; padding:0 16px; }
+  .hint-box {
+    border-radius:var(--radius-sm); padding:10px 12px;
+    font-size:12px; line-height:1.5;
+    display:flex; gap:8px; align-items:flex-start;
+  }
+  .hint-box.a { background:var(--accent-light); color:var(--accent); border:1px solid rgba(45,106,106,.2); }
+  .hint-box.b { background:var(--mode-b-light); color:var(--mode-b); border:1px solid rgba(92,61,143,.2); }
+  .hint-box .hint-icon { font-size:14px; flex-shrink:0; margin-top:1px; }
+
+  /* CONTAINER */
+  .container { max-width:480px; margin:0 auto; padding:16px 16px; }
+
+  /* CARD */
+  .card {
+    background:var(--surface); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:20px; margin-bottom:16px;
+    animation:slideUp .35s ease both;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(18px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .card-title {
+    font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .card-title .dot     { width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+  .card-title .dot.b   { background:var(--mode-b); }
+
+  /* ITEM NAME */
+  .item-input-wrap { margin-bottom:20px; }
+  .item-label { font-size:12px; color:var(--text-secondary); margin-bottom:6px; font-weight:500; }
+  .item-input {
+    width:100%; padding:12px 14px;
+    border:1.5px solid var(--border); border-radius:var(--radius-sm);
+    font-family:'Sora',sans-serif; font-size:15px; font-weight:600;
+    color:var(--text-primary); background:var(--surface2); outline:none;
+    transition:border-color var(--transition), box-shadow var(--transition);
+  }
+  .item-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,106,106,.12); background:#fff; }
+  .item-input::placeholder { font-weight:400; color:var(--text-muted); }
+
+  /* ROWS */
+  .row {
+    display:flex; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--surface2); gap:12px;
+  }
+  .row:last-of-type { border-bottom:none; }
+
+  .row-icon {
+    width:34px; height:34px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; font-size:15px;
+  }
+  .row-label { flex:1; font-size:14px; font-weight:500; color:var(--text-primary); line-height:1.2; }
+  .row-sublabel { font-size:11px; color:var(--text-muted); font-weight:400; }
+
+  .row-input {
+    width:90px; text-align:right; padding:8px 10px;
+    border:1.5px solid var(--border); border-radius:var(--radius-sm);
+    font-family:'DM Mono',monospace; font-size:16px; font-weight:500;
+    color:var(--text-primary); background:var(--surface2); outline:none;
+    transition:border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    -webkit-appearance:none; appearance:none;
+  }
+  .row-input:focus:not([readonly]) {
+    border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,106,106,.12);
+    background:#fff; transform:scale(1.02);
+  }
+  .row-input.solved   { background:var(--accent-light); border-color:var(--accent); color:var(--accent); font-weight:700; }
+  .row-input.solved.b { background:var(--mode-b-light); border-color:var(--mode-b); color:var(--mode-b); }
+
+  /* Icon bg per type */
+  .row[data-type="awal"]   .row-icon { background:#EEF2FF; }
+  .row[data-type="masuk"]  .row-icon { background:#DCFCE7; }
+  .row[data-type="keluar"] .row-icon { background:#FEE2E2; }
+  .row[data-type="retur"]  .row-icon { background:#FEF3C7; }
+  .row[data-type="rusak"]  .row-icon { background:#F3E8FF; }
+  .row[data-type="sisa"]   .row-icon { background:#E0F2FE; }
+
+  /* RESULT BOX */
+  .result-box {
+    margin-top:18px;
+    background:var(--accent-light); border:2px solid var(--accent);
+    border-radius:var(--radius-sm); padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    transition:all var(--transition);
+  }
+  .result-box.b { background:var(--mode-b-light); border-color:var(--mode-b); }
+  .result-label { font-size:13px; font-weight:600; color:var(--accent); letter-spacing:.04em; text-transform:uppercase; }
+  .result-box.b .result-label { color:var(--mode-b); }
+  .result-formula { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .result-value {
+    font-family:'DM Mono',monospace; font-size:28px; font-weight:500;
+    color:var(--accent); transition:all .25s ease; min-width:70px; text-align:right;
+  }
+  .result-box.b .result-value { color:var(--mode-b); }
+  .result-value.pop { animation:pop .3s ease; }
+  @keyframes pop {
+    0%  { transform:scale(1); }
+    50% { transform:scale(1.12); }
+    100%{ transform:scale(1); }
+  }
+
+  /* SOLVED BADGE */
+  .solved-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    background:var(--accent); color:#fff;
+    font-size:10px; font-weight:700; letter-spacing:.06em;
+    padding:2px 7px; border-radius:20px; text-transform:uppercase;
+    vertical-align:middle; margin-left:6px;
+  }
+  .solved-badge.b { background:var(--mode-b); }
+
+  /* BUTTONS */
+  .btn-row { display:flex; gap:10px; margin-top:18px; }
+  .btn {
+    flex:1; padding:14px 16px; border:none; border-radius:var(--radius-sm);
+    font-family:'Sora',sans-serif; font-size:14px; font-weight:600; cursor:pointer;
+    transition:all var(--transition); position:relative; overflow:hidden;
+    -webkit-appearance:none;
+  }
+  .btn::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,0); transition:background .15s; border-radius:inherit; }
+  .btn:active::after { background:rgba(255,255,255,.2); }
+  .btn:active { transform:scale(.97); }
+  .btn-primary   { background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(45,106,106,.3); }
+  .btn-primary:hover { background:var(--accent-hover); }
+  .btn-primary.b { background:var(--mode-b); box-shadow:0 4px 14px rgba(92,61,143,.3); }
+  .btn-primary.b:hover { background:#4a2f7a; }
+  .btn-ghost { background:var(--surface2); color:var(--text-secondary); border:1.5px solid var(--border); }
+  .btn-ghost:hover { background:var(--border); }
+
+  /* DIVIDER */
+  .divider { display:flex; align-items:center; gap:12px; margin:4px 0; }
+  .divider-line { flex:1; height:1px; background:var(--border); }
+  .divider-text { font-size:11px; color:var(--text-muted); font-weight:500; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+
+  /* AKTUAL CARD */
+  .aktual-card {
+    background:var(--surface); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:20px; margin-bottom:16px;
+    opacity:0; transform:translateY(16px);
+    transition:opacity .4s ease, transform .4s ease;
+    pointer-events:none;
+  }
+  .aktual-card.visible { opacity:1; transform:translateY(0); pointer-events:all; }
+
+  .aktual-input-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .aktual-label { flex:1; font-size:14px; font-weight:500; color:var(--text-primary); }
+
+  .ref-row {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:10px; padding:8px 10px;
+    background:var(--surface2); border-radius:var(--radius-sm);
+  }
+  .ref-row-label { font-size:12px; color:var(--text-secondary); font-weight:500; }
+  .ref-row-val   { font-family:'DM Mono',monospace; font-size:15px; font-weight:600; color:var(--text-primary); }
+
+  /* STATUS BADGE */
+  .status-badge {
+    border-radius:var(--radius-sm); padding:12px 14px;
+    display:flex; align-items:center; justify-content:space-between;
+    transition:all .35s ease; min-height:56px;
+  }
+  .status-badge.hidden { opacity:0; }
+  .status-badge.show   { opacity:1; }
+  .status-left { display:flex; flex-direction:column; }
+  .status-title { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .status-desc  { font-size:12px; margin-top:2px; opacity:.8; }
+  .status-num   { font-family:'DM Mono',monospace; font-size:22px; font-weight:500; letter-spacing:-.02em; }
+  .status-badge.plus  { background:var(--plus-bg);  color:var(--plus); }
+  .status-badge.minus { background:var(--minus-bg); color:var(--minus); }
+  .status-badge.match { background:var(--match-bg); color:var(--match); }
+
+  /* FOOTER */
+  .footer { text-align:center; padding:20px; font-size:11px; color:var(--text-muted); letter-spacing:.04em; }
+
+  /* RIPPLE */
+  .ripple-btn { position:relative; overflow:hidden; }
+  .ripple {
+    position:absolute; border-radius:50%; transform:scale(0);
+    animation:ripple-anim .5s linear; background:rgba(255,255,255,.25); pointer-events:none;
+  }
+  @keyframes ripple-anim { to { transform:scale(4); opacity:0; } }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:var(--text-primary); color:#fff;
+    padding:10px 20px; border-radius:40px;
+    font-size:13px; font-weight:500; z-index:999;
+    transition:transform .3s ease; white-space:nowrap; pointer-events:none;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  input[type=number] { -moz-appearance:textfield; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header" id="mainHeader">
+  <div class="header-label">Mie CP Klp Gading</div>
+  <div class="header-title">Kalkulator Stok</div>
+  <div class="header-sub" id="headerSub">Keluar diketahui → cari Sisa</div>
+</div>
+
+<!-- MODE TOGGLE -->
+<div class="mode-toggle-wrap">
+  <div class="mode-toggle">
+    <button class="mode-btn active a" id="modeABtn" onclick="setMode('a')">
+      🧮 Cari Sisa
+      <span>Keluar sudah diketahui</span>
+    </button>
+    <button class="mode-btn b" id="modeBBtn" onclick="setMode('b')">
+      🔍 Cari Keluar
+      <span>Sisa sudah diketahui</span>
+    </button>
+  </div>
+</div>
+
+<!-- HINT -->
+<div class="mode-hint">
+  <div class="hint-box a" id="hintBox">
+    <div class="hint-icon">💡</div>
+    <div id="hintText">Untuk barang seperti <strong>Mie, Box, Mineral</strong> — keluar sudah tercatat di sistem kasir. Masukkan jumlah keluar, sistem cari sisa.</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title"><span class="dot" id="cardDot"></span><span id="cardTitleText">Kalkulator Utama</span></div>
+
+    <div class="item-input-wrap">
+      <div class="item-label">Nama Item (opsional)</div>
+      <input class="item-input" id="itemName" type="text" placeholder="cth: Bakmi, Ayam, Box..." maxlength="40" />
+    </div>
+
+    <!-- STOK AWAL -->
+    <div class="row" data-type="awal">
+      <div class="row-icon">📦</div>
+      <div class="row-label">Stok Awal<div class="row-sublabel">Jumlah awal sebelum aktivitas</div></div>
+      <input class="row-input" id="stokAwal" type="number" inputmode="numeric" value="0" min="0" />
+    </div>
+
+    <!-- MASUK -->
+    <div class="row" data-type="masuk">
+      <div class="row-icon">➕</div>
+      <div class="row-label">Masuk<div class="row-sublabel">Barang diterima / restock</div></div>
+      <input class="row-input" id="masuk" type="number" inputmode="numeric" value="0" min="0" />
+    </div>
+
+    <!-- KELUAR — input di Mode A, result di Mode B -->
+    <div class="row" data-type="keluar">
+      <div class="row-icon">➖</div>
+      <div class="row-label">
+        Keluar<span class="solved-badge b" id="badgeKeluar" style="display:none">Hasil</span>
+        <div class="row-sublabel" id="sublabelKeluar">Barang terjual / terpakai</div>
+      </div>
+      <input class="row-input" id="keluar" type="number" inputmode="numeric" value="0" min="0" />
+    </div>
+
+    <!-- RETUR -->
+    <div class="row" data-type="retur">
+      <div class="row-icon">🔁</div>
+      <div class="row-label">Retur<div class="row-sublabel">Dikirim ke outlet lain</div></div>
+      <input class="row-input" id="retur" type="number" inputmode="numeric" value="0" min="0" />
+    </div>
+
+    <!-- RUSAK -->
+    <div class="row" data-type="rusak">
+      <div class="row-icon">🗑️</div>
+      <div class="row-label">Rusak<div class="row-sublabel">Barang tidak bisa dipakai</div></div>
+      <input class="row-input" id="rusak" type="number" inputmode="numeric" value="0" min="0" />
+    </div>
+
+    <!-- SISA — result di Mode A, input di Mode B -->
+    <div class="row" data-type="sisa">
+      <div class="row-icon">🗂️</div>
+      <div class="row-label">
+        Sisa<span class="solved-badge" id="badgeSisa" style="display:none">Hasil</span>
+        <div class="row-sublabel" id="sublabelSisa">Dihitung otomatis</div>
+      </div>
+      <input class="row-input solved" id="sisa" type="number" inputmode="numeric" value="0" min="0" readonly />
+    </div>
+
+    <!-- RESULT BOX -->
+    <div class="result-box" id="resultBox">
+      <div>
+        <div class="result-label" id="resultLabel">Sisa Stok</div>
+        <div class="result-formula" id="resultFormula">Awal + Masuk − Keluar − Retur − Rusak</div>
+      </div>
+      <div class="result-value" id="resultValue">0</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost ripple-btn" onclick="handleReset()">Reset</button>
+      <button class="btn btn-primary ripple-btn" id="hitungBtn" onclick="handleHitung()">Hitung & Lanjut →</button>
+    </div>
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-text">Cek Aktual Stok</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- AKTUAL CARD -->
+  <div class="aktual-card" id="aktualCard">
+    <div class="card-title"><span class="dot" id="aktualDot"></span>Bandingkan Aktual</div>
+
+    <div class="aktual-input-row">
+      <div class="aktual-label">
+        Stok Aktual di Tangan
+        <div class="row-sublabel">Hitung fisik barang sekarang</div>
+      </div>
+      <input class="row-input" id="aktualInput" type="number" inputmode="numeric" value="0" min="0" />
+    </div>
+
+    <div class="ref-row">
+      <div class="ref-row-label" id="refLabel">Sisa catatan</div>
+      <div class="ref-row-val" id="refValue">—</div>
+    </div>
+
+    <div class="status-badge hidden" id="statusBadge">
+      <div class="status-left">
+        <div class="status-title" id="statusTitle">—</div>
+        <div class="status-desc"  id="statusDesc">—</div>
+      </div>
+      <div class="status-num" id="statusNum">—</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="footer">Kalkulator Stok · Mie CP Bading</div>
+
+<script>
+let currentMode = 'a';
+
+// ── MODE SWITCH ─────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  const isB = mode === 'b';
+
+  document.getElementById('modeABtn').className = 'mode-btn a' + (isB ? '' : ' active');
+  document.getElementById('modeBBtn').className = 'mode-btn b' + (isB ? ' active' : '');
+
+  // Header
+  const hdr = document.getElementById('mainHeader');
+  hdr.className = 'header' + (isB ? ' mode-b' : '');
+  document.getElementById('headerSub').textContent = isB
+    ? 'Sisa diketahui → cari Keluar'
+    : 'Keluar diketahui → cari Sisa';
+
+  // Hint
+  const hintBox  = document.getElementById('hintBox');
+  const hintText = document.getElementById('hintText');
+  if (isB) {
+    hintBox.className = 'hint-box b';
+    hintText.innerHTML = 'Untuk barang seperti <strong>Ayam, Sambel, Bumbu</strong> — hitung fisik dulu berapa sisa, sistem cari berapa yang keluar.';
+  } else {
+    hintBox.className = 'hint-box a';
+    hintText.innerHTML = 'Untuk barang seperti <strong>Mie, Box, Mineral</strong> — keluar sudah tercatat di sistem kasir. Masukkan jumlah keluar, sistem cari sisa.';
+  }
+
+  // Dots & button
+  document.getElementById('cardDot').className = isB ? 'dot b' : 'dot';
+  document.getElementById('aktualDot').className = isB ? 'dot b' : 'dot';
+  document.getElementById('hitungBtn').className = 'btn btn-primary ripple-btn' + (isB ? ' b' : '');
+  document.getElementById('resultBox').className = 'result-box' + (isB ? ' b' : '');
+
+  // KELUAR field
+  const keluarEl = document.getElementById('keluar');
+  const badgeKeluar = document.getElementById('badgeKeluar');
+  if (isB) {
+    keluarEl.readOnly = true;
+    keluarEl.classList.add('solved', 'b');
+    badgeKeluar.style.display = 'inline-flex';
+    document.getElementById('sublabelKeluar').textContent = 'Dihitung otomatis';
+  } else {
+    keluarEl.readOnly = false;
+    keluarEl.classList.remove('solved', 'b');
+    badgeKeluar.style.display = 'none';
+    document.getElementById('sublabelKeluar').textContent = 'Barang terjual / terpakai';
+  }
+
+  // SISA field
+  const sisaEl = document.getElementById('sisa');
+  const badgeSisa = document.getElementById('badgeSisa');
+  if (isB) {
+    // user inputs sisa
+    sisaEl.readOnly = false;
+    sisaEl.classList.remove('solved');
+    badgeSisa.style.display = 'none';
+    document.getElementById('sublabelSisa').textContent = 'Masukkan hasil hitung fisik';
+  } else {
+    // sisa is auto-calculated
+    sisaEl.readOnly = true;
+    sisaEl.classList.add('solved');
+    badgeSisa.style.display = 'inline-flex';
+    document.getElementById('sublabelSisa').textContent = 'Dihitung otomatis';
+  }
+
+  // Result box label & formula
+  if (isB) {
+    document.getElementById('resultLabel').textContent   = 'Total Keluar';
+    document.getElementById('resultFormula').textContent = 'Awal + Masuk − Sisa − Retur − Rusak';
+  } else {
+    document.getElementById('resultLabel').textContent   = 'Sisa Stok';
+    document.getElementById('resultFormula').textContent = 'Awal + Masuk − Keluar − Retur − Rusak';
+  }
+
+  // Close aktual card on switch
+  document.getElementById('aktualCard').classList.remove('visible');
+  document.getElementById('statusBadge').className = 'status-badge hidden';
+
+  calcAuto();
+}
+
+// ── HELPERS ─────────────────────────────────────────
+function getVal(id)    { return parseInt(document.getElementById(id).value) || 0; }
+function setVal(id, v) { document.getElementById(id).value = v; }
+
+// ── REALTIME CALC ────────────────────────────────────
+function calcAuto() {
+  const awal  = getVal('stokAwal');
+  const masuk = getVal('masuk');
+  const retur = getVal('retur');
+  const rusak = getVal('rusak');
+
+  const resEl = document.getElementById('resultValue');
+  const prev  = resEl.textContent;
+  let result;
+
+  if (currentMode === 'a') {
+    // SISA = Awal + Masuk - Keluar - Retur - Rusak
+    const keluar = getVal('keluar');
+    result = awal + masuk - keluar - retur - rusak;
+    setVal('sisa', result);
+  } else {
+    // KELUAR = Awal + Masuk - Sisa - Retur - Rusak
+    const sisa = getVal('sisa');
+    result = awal + masuk - sisa - retur - rusak;
+    setVal('keluar', result);
+  }
+
+  resEl.textContent = result;
+  if (prev !== String(result)) {
+    resEl.classList.remove('pop');
+    void resEl.offsetWidth;
+    resEl.classList.add('pop');
+  }
+
+  if (document.getElementById('aktualCard').classList.contains('visible')) {
+    calcSelisih();
+  }
+}
+
+// ── SELISIH ─────────────────────────────────────────
+function calcSelisih() {
+  // Compare aktual vs Sisa (in both modes, sisa = stock remaining)
+  const sisaRef = getVal('sisa');
+  const aktual  = getVal('aktualInput');
+  const selisih = aktual - sisaRef;
+
+  document.getElementById('refLabel').textContent = currentMode === 'b'
+    ? 'Sisa input (fisik)' : 'Sisa catatan';
+  document.getElementById('refValue').textContent = sisaRef;
+
+  const badge = document.getElementById('statusBadge');
+  badge.className = 'status-badge show';
+  if (selisih > 0) {
+    badge.classList.add('plus');
+    document.getElementById('statusTitle').textContent = '✅ PLUS';
+    document.getElementById('statusDesc').textContent  = `Aktual lebih banyak ${selisih} dari catatan`;
+    document.getElementById('statusNum').textContent   = `+${selisih}`;
+  } else if (selisih < 0) {
+    badge.classList.add('minus');
+    document.getElementById('statusTitle').textContent = '❌ MINUS';
+    document.getElementById('statusDesc').textContent  = `Aktual kurang ${Math.abs(selisih)} dari catatan`;
+    document.getElementById('statusNum').textContent   = `${selisih}`;
+  } else {
+    badge.classList.add('match');
+    document.getElementById('statusTitle').textContent = '✔ SESUAI';
+    document.getElementById('statusDesc').textContent  = 'Aktual cocok dengan catatan stok';
+    document.getElementById('statusNum').textContent   = `0`;
+  }
+}
+
+// ── HITUNG & LANJUT ──────────────────────────────────
+function handleHitung() {
+  calcAuto();
+  const card = document.getElementById('aktualCard');
+  card.classList.add('visible');
+  setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'start' }), 150);
+  calcSelisih();
+  showToast(currentMode === 'a' ? 'Sisa stok dihitung ✓' : 'Jumlah keluar dihitung ✓');
+}
+
+// ── RESET ────────────────────────────────────────────
+function handleReset() {
+  ['stokAwal','masuk','retur','rusak','aktualInput'].forEach(id => setVal(id, '0'));
+  document.getElementById('itemName').value = '';
+  setVal('keluar', '0');
+  setVal('sisa', '0');
+  document.getElementById('resultValue').textContent = '0';
+  document.getElementById('aktualCard').classList.remove('visible');
+  document.getElementById('statusBadge').className = 'status-badge hidden';
+  window.scrollTo({ top:0, behavior:'smooth' });
+  showToast('Reset berhasil');
+}
+
+// ── LISTENERS ────────────────────────────────────────
+['stokAwal','masuk','keluar','retur','rusak','sisa'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => { if (!el.readOnly) calcAuto(); });
+  el.addEventListener('focus', function() { if (!this.readOnly && this.value === '0') this.value = ''; });
+  el.addEventListener('blur',  function() { if (this.value === '') this.value = '0'; if (!this.readOnly) calcAuto(); });
+});
+
+const aktualEl = document.getElementById('aktualInput');
+aktualEl.addEventListener('input', calcSelisih);
+aktualEl.addEventListener('focus', function() { if (this.value === '0') this.value = ''; });
+aktualEl.addEventListener('blur',  function() { if (this.value === '') this.value = '0'; });
+
+// ── RIPPLE ───────────────────────────────────────────
+document.querySelectorAll('.ripple-btn').forEach(btn => {
+  btn.addEventListener('pointerdown', e => {
+    const r = btn.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2;
+    const rip = document.createElement('span');
+    rip.className = 'ripple';
+    rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
+    btn.appendChild(rip);
+    setTimeout(() => rip.remove(), 600);
+  });
+});
+
+// ── TOAST ────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Init
+setMode('a');
+</script>
+</body>
+</html>
