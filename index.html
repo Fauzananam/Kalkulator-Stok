@@ -285,7 +285,7 @@
 
 <!-- HEADER -->
 <div class="header" id="mainHeader">
-  <div class="header-label">Mie CP Klp Gading</div>
+  <div class="header-label">Mie CP Bading</div>
   <div class="header-title">Kalkulator Stok</div>
   <div class="header-sub" id="headerSub">Keluar diketahui → cari Sisa</div>
 </div>
@@ -325,14 +325,14 @@
     <div class="row" data-type="awal">
       <div class="row-icon">📦</div>
       <div class="row-label">Stok Awal<div class="row-sublabel">Jumlah awal sebelum aktivitas</div></div>
-      <input class="row-input" id="stokAwal" type="number" inputmode="numeric" value="0" min="0" />
+      <input class="row-input" id="stokAwal" type="text" inputmode="decimal" value="0" />
     </div>
 
     <!-- MASUK -->
     <div class="row" data-type="masuk">
       <div class="row-icon">➕</div>
       <div class="row-label">Masuk<div class="row-sublabel">Barang diterima / restock</div></div>
-      <input class="row-input" id="masuk" type="number" inputmode="numeric" value="0" min="0" />
+      <input class="row-input" id="masuk" type="text" inputmode="decimal" value="0" />
     </div>
 
     <!-- KELUAR — input di Mode A, result di Mode B -->
@@ -342,21 +342,21 @@
         Keluar<span class="solved-badge b" id="badgeKeluar" style="display:none">Hasil</span>
         <div class="row-sublabel" id="sublabelKeluar">Barang terjual / terpakai</div>
       </div>
-      <input class="row-input" id="keluar" type="number" inputmode="numeric" value="0" min="0" />
+      <input class="row-input" id="keluar" type="text" inputmode="decimal" value="0" />
     </div>
 
     <!-- RETUR -->
     <div class="row" data-type="retur">
       <div class="row-icon">🔁</div>
       <div class="row-label">Retur<div class="row-sublabel">Dikirim ke outlet lain</div></div>
-      <input class="row-input" id="retur" type="number" inputmode="numeric" value="0" min="0" />
+      <input class="row-input" id="retur" type="text" inputmode="decimal" value="0" />
     </div>
 
     <!-- RUSAK -->
     <div class="row" data-type="rusak">
       <div class="row-icon">🗑️</div>
       <div class="row-label">Rusak<div class="row-sublabel">Barang tidak bisa dipakai</div></div>
-      <input class="row-input" id="rusak" type="number" inputmode="numeric" value="0" min="0" />
+      <input class="row-input" id="rusak" type="text" inputmode="decimal" value="0" />
     </div>
 
     <!-- SISA — result di Mode A, input di Mode B -->
@@ -366,7 +366,7 @@
         Sisa<span class="solved-badge" id="badgeSisa" style="display:none">Hasil</span>
         <div class="row-sublabel" id="sublabelSisa">Dihitung otomatis</div>
       </div>
-      <input class="row-input solved" id="sisa" type="number" inputmode="numeric" value="0" min="0" readonly />
+      <input class="row-input solved" id="sisa" type="text" inputmode="decimal" value="0" readonly />
     </div>
 
     <!-- RESULT BOX -->
@@ -399,7 +399,7 @@
         Stok Aktual di Tangan
         <div class="row-sublabel">Hitung fisik barang sekarang</div>
       </div>
-      <input class="row-input" id="aktualInput" type="number" inputmode="numeric" value="0" min="0" />
+      <input class="row-input" id="aktualInput" type="text" inputmode="decimal" value="0" />
     </div>
 
     <div class="ref-row">
@@ -505,8 +505,18 @@ function setMode(mode) {
 }
 
 // ── HELPERS ─────────────────────────────────────────
-function getVal(id)    { return parseInt(document.getElementById(id).value) || 0; }
-function setVal(id, v) { document.getElementById(id).value = v; }
+// Parse: accept both comma and dot as decimal separator
+function getVal(id) {
+  const raw = document.getElementById(id).value.toString().replace(',', '.');
+  const n = parseFloat(raw);
+  return isNaN(n) ? 0 : n;
+}
+// Format: use comma as decimal sep, only if decimal exists
+function fmt(n) {
+  if (Number.isInteger(n)) return String(n);
+  return parseFloat(n.toFixed(3)).toString().replace('.', ',');
+}
+function setVal(id, v) { document.getElementById(id).value = fmt(v); }
 
 // ── REALTIME CALC ────────────────────────────────────
 function calcAuto() {
@@ -531,8 +541,8 @@ function calcAuto() {
     setVal('keluar', result);
   }
 
-  resEl.textContent = result;
-  if (prev !== String(result)) {
+  resEl.textContent = fmt(result);
+  if (prev !== fmt(result)) {
     resEl.classList.remove('pop');
     void resEl.offsetWidth;
     resEl.classList.add('pop');
@@ -552,20 +562,20 @@ function calcSelisih() {
 
   document.getElementById('refLabel').textContent = currentMode === 'b'
     ? 'Sisa input (fisik)' : 'Sisa catatan';
-  document.getElementById('refValue').textContent = sisaRef;
+  document.getElementById('refValue').textContent = fmt(sisaRef);
 
   const badge = document.getElementById('statusBadge');
   badge.className = 'status-badge show';
   if (selisih > 0) {
     badge.classList.add('plus');
     document.getElementById('statusTitle').textContent = '✅ PLUS';
-    document.getElementById('statusDesc').textContent  = `Aktual lebih banyak ${selisih} dari catatan`;
-    document.getElementById('statusNum').textContent   = `+${selisih}`;
+    document.getElementById('statusDesc').textContent  = `Aktual lebih banyak ${fmt(selisih)} dari catatan`;
+    document.getElementById('statusNum').textContent   = `+${fmt(selisih)}`;
   } else if (selisih < 0) {
     badge.classList.add('minus');
     document.getElementById('statusTitle').textContent = '❌ MINUS';
-    document.getElementById('statusDesc').textContent  = `Aktual kurang ${Math.abs(selisih)} dari catatan`;
-    document.getElementById('statusNum').textContent   = `${selisih}`;
+    document.getElementById('statusDesc').textContent  = `Aktual kurang ${fmt(Math.abs(selisih))} dari catatan`;
+    document.getElementById('statusNum').textContent   = fmt(selisih);
   } else {
     badge.classList.add('match');
     document.getElementById('statusTitle').textContent = '✔ SESUAI';
@@ -600,13 +610,20 @@ function handleReset() {
 // ── LISTENERS ────────────────────────────────────────
 ['stokAwal','masuk','keluar','retur','rusak','sisa'].forEach(id => {
   const el = document.getElementById(id);
-  el.addEventListener('input', () => { if (!el.readOnly) calcAuto(); });
+  el.addEventListener('input', function() {
+    // Allow only digits, one comma or dot, optional leading minus
+    this.value = this.value.replace(/[^0-9,.\-]/g, '');
+    if (!el.readOnly) calcAuto();
+  });
   el.addEventListener('focus', function() { if (!this.readOnly && this.value === '0') this.value = ''; });
-  el.addEventListener('blur',  function() { if (this.value === '') this.value = '0'; if (!this.readOnly) calcAuto(); });
+  el.addEventListener('blur',  function() { if (this.value === '' || this.value === '-') this.value = '0'; if (!this.readOnly) calcAuto(); });
 });
 
 const aktualEl = document.getElementById('aktualInput');
-aktualEl.addEventListener('input', calcSelisih);
+aktualEl.addEventListener('input', function() {
+  this.value = this.value.replace(/[^0-9,.]/g, '');
+  calcSelisih();
+});
 aktualEl.addEventListener('focus', function() { if (this.value === '0') this.value = ''; });
 aktualEl.addEventListener('blur',  function() { if (this.value === '') this.value = '0'; });
 
